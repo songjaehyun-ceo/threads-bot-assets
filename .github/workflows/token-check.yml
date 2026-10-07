@@ -1,0 +1,19 @@
+name: 토큰 점검 (게시 안 함)
+
+on:
+  push:
+    paths: [".github/token-check"]
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Threads 토큰 확인
+        env:
+          T: ${{ secrets.THREADS_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$T" ]; then echo "::error::THREADS_ACCESS_TOKEN 시크릿이 비어 있음"; exit 1; fi
+          R=$(curl -s "https://graph.threads.net/v1.0/me?fields=username" -H "Authorization: Bearer $T")
+          U=$(echo "$R" | python3 -c "import sys,json;print(json.load(sys.stdin).get('username',''))")
+          if [ -n "$U" ]; then echo "::notice::토큰 정상 - 계정 @$U"; else echo "::error::토큰 오류: $(echo "$R" | head -c 300)"; exit 1; fi
