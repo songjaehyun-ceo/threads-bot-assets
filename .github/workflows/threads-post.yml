@@ -1,0 +1,35 @@
+name: Threads 자동 게시
+
+on:
+  schedule:
+    - cron: "13 22 * * *"   # 오전 07:13 KST
+    - cron: "43 3 * * *"    # 오후 12:43 KST
+    - cron: "47 13 * * *"   # 오후 10:47 KST
+  workflow_dispatch:
+    inputs:
+      post_date:
+        description: "날짜 (YYYY-MM-DD, 비우면 오늘)"
+        required: false
+      post_slot:
+        description: "시간대 (am / noon / night, 비우면 현재 시각 기준)"
+        required: false
+
+concurrency:
+  group: threads-post
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 게시
+        env:
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          CRON: ${{ github.event.schedule }}
+          POST_DATE: ${{ github.event.inputs.post_date }}
+          POST_SLOT: ${{ github.event.inputs.post_slot }}
+        run: python scripts/post.py
